@@ -507,4 +507,4 @@ client.on("message", async message => {
 
 
 //THIS SHIT IS HOLY, ANYBODY WHO HAS YOUR TOKEN HAS ACCES TO BOT SO FUCC OFF TO CONFIG AND MAKE YOUR OWN CONFIG WITH TOKEN MAH BOT
-client.login(config.token);
+client.login(process.env.BOT_TOKEN);
