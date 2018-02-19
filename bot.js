@@ -2,10 +2,7 @@
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const embed = new Discord.RichEmbed();
-const config = require("./config.json");
 const Attachment = require('discord.js').Attachment
-const fs = require("fs");
-let exp = JSON.parse(fs.readFileSync("./exp.json", "utf8"));
 const prefix = "!";
 
 
@@ -54,7 +51,7 @@ client.on("message", async message => {
   if(message.author.bot) return;
   
   // This is so it ignores messages that does not start with prefix. But zozo's request forced me to remove it. Kept it for good measure.
-        //if(message.content.indexOf(config.prefix) !== 0) return;
+        //if(message.content.indexOf(.prefix) !== 0) return;
   
   // Command, arguments etc separator to avoid bugs.
   const args = message.content.slice(prefix.length).trim().split(/ +/g);
@@ -506,5 +503,5 @@ client.on("message", async message => {
 
 
 
-//THIS SHIT IS HOLY, ANYBODY WHO HAS YOUR TOKEN HAS ACCES TO BOT SO FUCC OFF TO CONFIG AND MAKE YOUR OWN CONFIG WITH TOKEN MAH BOT
+//THIS SHIT IS HOLY, ANYBODY WHO HAS YOUR TOKEN HAS ACCES TO BOT SO FUCC OFF TO AND MAKE YOUR OWN CONFIG WITH TOKEN MAH BOT
 client.login(process.env.BOT_TOKEN);
