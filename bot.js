@@ -486,9 +486,14 @@ client.on("message", async message => {
       message.reply(`${message.author.tag} removed ${message.user.tag}'s access to bottest`);
   }
 
-  
-
     //exports.run = message.channel.send(`your random number is ${random}`);
+  if(command === 'rename'){
+      let member = message.mentions.members.first();
+      let name = args.slice(1).join(' ');
+      if(!name)
+        return message.reply("Please indicate a new nickname!");
+          member.setNickname(name)
+  }
 
 
   
