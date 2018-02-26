@@ -542,6 +542,27 @@ if(message.content.startsWith(prefix +'rename')){
     .setTimestamp()
     message.channel.send({embed});
   }
+  if(message.content.startsWith(prefix + "user")) {
+  let user = message.mentions.users.first();
+  let member = message.mentions.members.first();
+    if(!user)
+      return message.reply('Mention who you want to find more about')
+    if(!member)
+      return message.reply('Mention who you want to find more about')  
+  const embed = new Discord.RichEmbed()
+  .setTitle(`Info about ${user.tag}`)
+  .setColor(0x00AE86)
+  .addField(`Joined discord at:`,`${user.createdAt}`)
+  .addField(`Joined server at:`, `${member.joinedAt}`)
+  .addField('Nickname: ', `${member.displayName}`)
+  .addField('Role:', `${member.highestRole}`)
+  .addField('Mute status:', `${member.serverMute}`)
+  .addField('Status:',`${user.presence.status}`)
+  .addField('Pic:', `${user.displayAvatarURL}`)
+  .setFooter(`ID: ${user.id}`)
+  .setTimestamp()
+  message.channel.send({embed});
+ }
 
   
 
