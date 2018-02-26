@@ -537,7 +537,7 @@ if(message.content.startsWith(prefix +'rename')){
     .addField('Server location:', `${message.guild.region}`)
     .addField('Server ID', `${message.guild.id}`)
     .addField('Member count:', `${message.guild.memberCount}`)
-    .addField('Server outrage status: ', `${message.guild.available}`)
+    .addField('Is server online?: ', `${message.guild.available}`)
     .addField('Server Icon', `${message.guild.iconURL}`)
     .setTimestamp()
     message.channel.send({embed});
