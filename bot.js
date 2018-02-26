@@ -487,19 +487,60 @@ client.on("message", async message => {
   }
 
     //exports.run = message.channel.send(`your random number is ${random}`);
-  if(command === 'rename'){
+if(message.content.startsWith(prefix +'rename')){
       let member = message.mentions.members.first();
       let name = args.slice(1).join(' ');
       if(!name)
         return message.reply("Please indicate a new nickname!");
           member.setNickname(name)
+          message.channel.send(`Renamed to ${name}`)
   }
 
-  if(command === "ram"){
+
+  if(message.content.startsWith(prefix +"ram")){
     const arr = [1, 2, 3, 4, 5, 6, 9, 7, 8, 9, 10];
     arr.reverse();
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
     message.channel.send(`Approx. RAM usage. ${Math.round(used * 100) / 100} MB`);
+  }
+   const used = process.memoryUsage().heapUsed / 1024 / 1024
+  
+  let x = client.uptime;
+  let seconds=(x/1000)%60
+  let minutes=(x/(1000*60))%60
+  let hours=(x/(1000*60*60))%24
+  
+  
+  if(message.content.startsWith(prefix + "info")){
+      const embed = new Discord.RichEmbed()
+      .setTitle('Info about: The TaskMaster')
+      .setColor(0x00ffff)
+      .addField(`Approx. current RAM usage.`, `${Math.round(used * 100) / 100} MB`)
+      .addField(`Creator:`, `FcGod#8877`)
+      .addField(`Current servers count:`,`${client.guilds.size}` )
+      .addField(`Current uptime`, `${Math.round(hours)} hours, ${Math.round(minutes * 10)/10} minutes, ${Math.round(seconds * 100)/100} seconds.`)
+
+      .setTimestamp()
+      message.channel.send({embed});
+//IF YOU DO MATH.ROUND(TARGET (* 100) / 100) YOU GET DECIMAL (FOR EVERY 0 YOU GET EXTRA DECIMAL, 3 DECIMALS 3 0S)
+
+  }
+  
+  if(message.content.startsWith(prefix + "guild")){
+    
+    const embed = new Discord.RichEmbed()
+  
+    .setTitle('Guild info')
+    .addField('Guild name:', `${message.guild.name}`)
+    .addField('Guild owner:', `${message.guild.owner}`)
+    .addField('Creation Date', `${message.guild.createdAt}`)
+    .addField('Server location:', `${message.guild.region}`)
+    .addField('Server ID', `${message.guild.id}`)
+    .addField('Member count:', `${message.guild.memberCount}`)
+    .addField('Server outrage status: ', `${message.guild.available}`)
+    .addField('Server Icon', `${message.guild.iconURL}`)
+    .setTimestamp()
+    message.channel.send({embed});
   }
 
   
