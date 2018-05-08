@@ -373,7 +373,7 @@ client.on("message", async message => {
           message.channel.send("`Permanent invite link: Discord.me/dcwf`");
         }      
         
-
+          /*
           //EXP system, for every message a person sends they are given 1 point. Once they have enough points, they level up.
           //If they don't have an exp profile in exp.json this will create 1.
           if (!exp[message.author.id]) exp[message.author.id] = {
@@ -398,6 +398,7 @@ client.on("message", async message => {
           fs.writeFile("./exp.json", JSON.stringify(exp), (err) => {
             if (err) console.error(err)
           });
+          */
 
           
 
