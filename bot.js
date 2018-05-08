@@ -4,6 +4,12 @@ const client = new Discord.Client();
 const embed = new Discord.RichEmbed();
 const Attachment = require('discord.js').Attachment
 const prefix = "!";
+let fs = require(`fs`);
+let exp = JSON.parse(fs.readFileSync("./exp.json", "utf8"));
+const YTDL = require("ytdl-core");
+const token = "NDE4MDc0NDI0NjQ2OTU5MTE2.DXcRwA._IMunyVdAYzZ7syMY49ZJ82_ysU";
+const weather = require('weather-js')
+//You'll require to go to discord developers, create a new app, set it as bot user and insert the token to the "token" var to make the bot work.
 
 
 
@@ -12,13 +18,13 @@ client.on("ready", () => {
   // Tells if bot is online
   console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`); 
   
-  
+  //Shows in bot's activity on how many servers its currently active on.
   client.user.setActivity(`on ${client.guilds.size} servers`);
 });
 
-//Auto-Welcomer
+//Welcomes all newcomers to the discord.
 client.on("guildMemberAdd", member => {
-  member.guild.channels.get('375956654849785857').send("Welcome! Do !general to get access to server and please assign the games you own: Overwatch - !ow, World of Warcraft -!wow, League of Legends -!lol, The Divison - !divison, ");
+  member.guild.channels.get('418076040859090945').send(`Welcome, <@${member.id}>! to my bot show-off discord. To find more about the bot do !help for more commands.`);
 });
 
 
@@ -28,13 +34,14 @@ client.on("guildMemberAdd", member => {
 
 
 client.on("guildCreate", guild => {
-  // For every guild bot joins, this number increases. Also tells the amount of channels + members and etc.
+  // Each time the bot joins a "guild"/server/whatever it'll inform me via console that it has joined that guild + its name, membercount and id. and then it ill update the guild count.
   console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members!`);
   client.user.setGame(`on ${client.guilds.size} servers`);
 });
 
+
 client.on("guildDelete", guild => {
-  // When bot is kicked from guilt
+  // When the bot is removed from a guild to inform me and decrease guild count.
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
   client.user.setGame(`on ${client.guilds.size} servers`);
 });
@@ -50,41 +57,38 @@ client.on("message", async message => {
   // Avoiding botception.
   if(message.author.bot) return;
   
-  // This is so it ignores messages that does not start with prefix. But zozo's request forced me to remove it. Kept it for good measure.
+  // This is so it ignores messages that does not start with prefix. I don't need it but I keep it for good measure.
         //if(message.content.indexOf(.prefix) !== 0) return;
   
-  // Command, arguments etc separator to avoid bugs.
+  // ARGS = arguments so my commands can get arguments easily. Command just lets me do if(command ==== "commandname"){} so easier commmand making.
   const args = message.content.slice(prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
   
   //Commands start
   
-  if(message.content.startsWith(prefix + "ping")) {
-   // Bot performance-reponse time calculator.
-    const m = await message.channel.send("Ping?");
-    m.edit(`Pong! Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`);
-  }
+  
   
  
   
   if(message.content.startsWith(prefix + "kick")) {
     
-    if(!message.member.roles.some(r=>["Admin", "Staff", "Darklight bot"].includes(r.name)) )
+    //This line limits the command to the 3 ranks mentioned.
+    if(!message.member.roles.some(r=>["Admin", "Staff", "Helper"].includes(r.name)) )
       return message.reply("Sorry, you don't have permissions to use this!");
     
-    //Verifies if the member exists, first line allows me to @ at user.
+    //Verified for a tagged user.
     let member = message.mentions.members.first();
     if(!member)
       return message.reply("Please mention a valid member of this server");
     if(!member.kickable) 
       return message.reply("I cannot kick this user! Do they have a higher role? Do I have kick permissions?");
     
-  
+        //So I know why the user was kicked, good for tracking of events.
     let reason = args.slice(1).join(' ');
     if(!reason)
       return message.reply("Please indicate a reason for the kick!");
     
-    // off with the cuck
+    //Now we acctualy kick the target. If it fails i'll inform so.
     await member.kick(reason)
       .catch(error => message.reply(`Sorry ${message.author} I couldn't kick because of : ${error}`));
     message.reply(`${member.user.tag} has been kicked by ${message.author.tag} because: ${reason}`);
@@ -92,8 +96,8 @@ client.on("message", async message => {
   }
   
   if(message.content.startsWith(prefix + "ban")) {
-    // legit like kick. Discord uses .bannable or .kickable
-    if(!message.member.roles.some(r=>["Admin", "Darklight bot"].includes(r.name)) )
+    // Identical to kick. but its .ban instead of .kick (thanks d.js library)
+    if(!message.member.roles.some(r=>["Admin", "Helper"].includes(r.name)) )
       return message.reply("Sorry, you don't have permissions to use this!");
     
     let member = message.mentions.members.first();
@@ -112,86 +116,77 @@ client.on("message", async message => {
   }
   
   if(command === "purge") {
-    // removes all fucking messages to 100 why the fuck idkf
-    if(!message.member.roles.some(r=>["Admin", "Darklight bot"].includes(r.name)) )
+        //Purge commands deletes a given amount of lines.
+    if(!message.member.roles.some(r=>["Admin", "Helper"].includes(r.name)) )
       return message.reply("Sorry, you don't have permissions to use this!");
-    // get the delete count, as an actual number.
+    // Gets delete count.
     const deleteCount = parseInt(args[0]);
     
-    // OR conds.
+    // This conditions are so the person can't delete only 1 line (aka the command itself), but cannot delete more then 100. If conditions aren't met it'll inform the user.
     if(!deleteCount || deleteCount < 2 || deleteCount > 100)
       return message.reply("Please provide a number between 2 and 100 for the number of messages to delete");
     
-    //this is when the bot goes gypsy mod and steals the comments.
+    //Here the bot fetches the amount of given messages and then deletes it.
     const fetched = await message.channel.fetchMessages({limit: deleteCount});
     message.channel.bulkDelete(fetched)
       .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
   }
 
   if(message.content.startsWith(prefix + "say")) {
-    if(!message.member.roles.some(r=>["Admin", "Darklight bot"].includes(r.name)) )
+    if(!message.member.roles.some(r=>["Admin", "Helper"].includes(r.name)) )
     return message.reply("Sorry, you don't have permissions to use this!");
+
+    //Takes the argument aka what we want to say.
     const sayMessage = args.join(" ");
-    // This deletes the original comment
+    // Deletes the !say command
     message.delete().catch(O_o=>{}); 
-    // Here bot acctualy says what you wanted 
+    // Says what we wanted for it to say.
     message.channel.send(sayMessage);
 }
 
-      //What you see is the IDs of our emojis. Bots cannot use like :woah: so they use the IDs.
-      if(message.content.startsWith(prefix + "emojis")){
-        return message.reply("<:WOAH:376490001149460481> <:wide_eye_pepe:376539827610320897> <:wendy:376643492497063936> <:uhoh:404180486966083594> <:thonkeggplant:376645376180224011> <:skelebone:376647005038182412> <:shrek:376488325785059331> <:shocked:376645438150803466> <:scott:376539912142454784> <:sad2b:376491326461706241> <:sad_pepe:376539827878756352> <:ppap:376488864975552522> <:PLS:385154701848739840> <:pepeGaaah:376489523326091274> <:pepebanhammer:378516457627189248> <:pedopepe:376489361379688450> <:lennypuff:385156586886135829> <:Lennychu:387520479667159040> <:horo:377511531828477952> <:hitler:376645500985802752> <:hardplant:382964036502945792> <:Gun:404540722444763148> <:fuckyfucky:377950833830264832> <:ExcaliDab:392355778536800260> <:endme:387521755780218880> <:dancingpepe:376489170841108510> <:communismsmiley:387009799985954816> <:clem:376539911945191424> <:Byakuren_Hijiri__2:399622787351707649> <:boobs:385155499047256064> <:BinLaden:392088554890723329> <:bigping:386550649661292544> <:baro:376539912012300298> <:2bthink:404399797391458305> <:2bgasp:376491693408780298> <:2bclimax:376491019702632448>");
-      }
-        // VIIIKIIIIING
-      if(message.content.startsWith(prefix + "bestperson")){
-          return message.reply("Its vikin'");
+            //This was my first command acctualy. It's just a simple reply command.
+      if(message.content.startsWith(prefix + "ping")){
+          return message.reply("pong");
         }
-        //useless shit
       
-      if(message.content.startsWith(prefix + "banana")){
-        return message.reply(" just banana'd YOU!");
-      }
-      if(message.content.startsWith(prefix + "gifgod")){
-        message.channel.sendMessage("It's a GIF Goddess actually, and it's Zozo obv");
-      }
           
                 
 
-
+        //Help command to inform the user about all feature it has.
     if(message.content.startsWith(prefix + "help")){
-      const embed = {
-        "description": "DarkLight Bot help commands.",
-        "color": 9467416,
-        "timestamp": "2018-01-31T14:06:52.703Z",
-        "thumbnail": {
-          "url": "https://cdn.discordapp.com/embed/avatars/0.png"
-        },
-        "fields": [
-          {
-            "name": "`!roles`",
-            "value": "Information about self-assignable game roles."
-          },
-          {
-            "name": "`!voice`",
-            "value": "More information about temporary voice channels."
-          },
-          {
-            "name": "`!ping`",
-            "value": "Checks bot response time"
-          },
-          {
-            "name": "`!invitelink`",
-            "value": "Permanent invite link"
-          },
-          {
-            "name": "`!bestperson`",
-            "value": "`*Mandatory knowledge*`"
-          }
-        ]
-      };
+        //Makes an embed.
+        const embed = new Discord.RichEmbed()
+        .setTitle(`Taskmaster command information panel.`)
+        .setColor(9467416)
+        .addField(`!roles`, 'A list of all self-assignable roles.')
+        .addField(`!voice`, 'More information about temporary voice channels.')
+        .addField(`!info`, 'Check bot stats.')
+        .addField(`!guild`, `More information about the guild.`)
+        .addField(`!user @user`, `More information about the pinged user.`)
+        .addField(`!play -YoutubeLink- and !stop`, `Bot joins your voice chat and plays the link given. !stop stops the music playing.`)
+        .addField(`!admininfo`, `Shows all staff commands.`)
+        message.channel.send({ embed });
+    }
+
+    if(message.content.startsWith(prefix + "admininfo")){
+      const embed = new Discord.RichEmbed()
+      .setTitle(`Admin commands list.`)
+      .setColor(9467416)
+      .addField(`!ban @user`, `Bans the target. Cannot rejoin.`)
+      .addField(`!kick @user`, `Kicks the target out of guild. Can rejoin.`)
+      .addField(`!rename @user`, `Changes target's nickname.`)
+      .addField('!purge number', `Deletes the amount of messages specified.`)
+      .addField(`!say`, `Makes the bot say what you said.`)
       message.channel.send({ embed });
     }
 
+
+
+
+  
+    
+
+        //Embed for information about roles. This one was made in second style. (Uglier to do, but wanted to try.)
     if(message.content.startsWith(prefix + "roles")){
       const embed = {
         "description": "Information about self-assignable roles",
@@ -246,16 +241,16 @@ client.on("message", async message => {
     }
       
 
-      //like the banana shit
+     
       
-        // the first "let" searches for the rank we tell it too. And the second is just a defition I had to make because memeber can either be the one who said the command or a target.
+        //Self-assignable roles.
       if(message.content.startsWith(prefix + "general")){
         let General = message.guild.roles.find("name", "General Member");
         let member = message.member;
         if(!member)
       return message.reply("Please mention a valid member of this server");
         member.addRole(General).catch(console.error);
-        //This shit just repeats but one for each case so hecc off
+        message.reply('Role added!')
       }
       if(message.content.startsWith(prefix + "lol")){
         let General = message.guild.roles.find("name", "League of Legends");
@@ -289,8 +284,9 @@ client.on("message", async message => {
         member.addRole(General).catch(console.error);
           return message.reply('Role given!');
       }
+      //Grants the role needed to acces Dev commands. Will delete the message afterwards.
       if(message.content.startsWith(prefix + "BOT")){
-        let BOT = message.guild.roles.find("name", "Darklight bot");
+        let BOT = message.guild.roles.find("name", "Helper");
         let member = message.member;
         if(!member)
       return message.reply("Please mention a valid member of this server");
@@ -300,9 +296,9 @@ client.on("message", async message => {
       }
 
       
-        //Modified command: Searches for the general member rank to remove it.
+        //Modified command: Searches for the general member rank and removes it. General Member rank is needed to gain acces to server.
       if(message.content.startsWith(prefix + "timeout")){
-        if(!message.member.roles.some(r=>["Admin", "Darklight bot"].includes(r.name)) )
+        if(!message.member.roles.some(r=>["Admin", "Helper"].includes(r.name)) )
     return message.reply("Sorry, you don't have permissions to use this!");
         let General = message.guild.roles.find("name", "General Member");
         let member = message.mentions.members.first();
@@ -310,9 +306,9 @@ client.on("message", async message => {
       return message.reply("Please mention a valid member of this server");
         member.removeRole(General).catch(console.error);
       }
-      // unmute or general are kinda the same, but general acts on 'author' when unmute acts on target
+      //Unndo and general are kind of similar. However general affects the message author while undo affects the target.
       if(message.content.startsWith(prefix + "undo")){
-        if(!message.member.roles.some(r=>["Admin", "Darklight bot"].includes(r.name)) )
+        if(!message.member.roles.some(r=>["Admin", "Helper"].includes(r.name)) )
     return message.reply("Sorry, you don't have permissions to use this!");
         let General = message.guild.roles.find("name", "General Member");
         let member = message.mentions.members.first();
@@ -322,13 +318,16 @@ client.on("message", async message => {
       }
       
       
-  
+          //Creates temporary channels.
+        //Creates temporary 1 voice channel.
       if(message.content.startsWith(prefix + "temp1")){
-        message.channel.bulkDelete(1);        
-        message.guild.createChannel('temporary_channel1', 'voice').then(channel => channel.setParent(`375709825100939266`))
+        message.channel.bulkDelete(1);       
+
+        message.guild.createChannel('temporary_channel1', 'voice').then(channel => channel.setParent(`418072952702238763`))
         message.reply('Channel created! Please use 1 channel per group (Max amount: 3) and delete it afterwards using !deltemp to delete this voice channel. Abusing the command will have consenquences.  ')
     .catch(console.error);
         } 
+        //Deletes temporary 1 voice channel.
       if(message.content.startsWith(prefix + "deltemp1")){
         message.channel.bulkDelete(1);
         
@@ -338,7 +337,7 @@ client.on("message", async message => {
 
       if(message.content.startsWith(prefix + "temp2")){
         message.channel.bulkDelete(1);
-        message.guild.createChannel('temporary_channel2', 'voice').then(channel => channel.setParent(`375709825100939266`))
+        message.guild.createChannel('temporary_channel2', 'voice').then(channel => channel.setParent(`418072952702238763`))
         message.reply('Channel created! Please use 1 channel per group (Max amount: 3) and delete it afterwards using !deltemp to delete this voice channel. Abusing the command will have consenquences.  ')
     .catch(console.error);
         } 
@@ -351,7 +350,7 @@ client.on("message", async message => {
 
       if(message.content.startsWith(prefix + "temp3")){
         message.channel.bulkDelete(1);
-        message.guild.createChannel('temporary_channel3', 'voice').then(channel => channel.setParent(`375709825100939266`))
+        message.guild.createChannel('temporary_channel3', 'voice').then(channel => channel.setParent(`418072952702238763`))
         message.reply('Channel created! Please use 1 channel per group (Max amount: 3) and delete it afterwards using !deltemp to delete this voice channel. Abusing the command will have consenquences.  ')
     .catch(console.error);
         } 
@@ -361,132 +360,54 @@ client.on("message", async message => {
        message.guild.channels.find('name', 'temporary_channel3').delete().catch(console.error);
        message.reply('Channel deleted');
       } 
-      if(message.content.startsWith(prefix + "pantsu")){
-        message.channel.bulkDelete(1);
-        message.channel.send({ files: [new Attachment('./BotBigEmotes/pk.png', 'pk.png')] });
-      }
-      if(message.content.startsWith(prefix + "pogchamp")){
-    message.channel.bulkDelete(1);
-        message.channel.send({ files: [new Attachment('./BotBigEmotes/pogchamp.png', 'pogchamp.png')] });
-      }
-      if(message.content.startsWith(prefix + "kappa")){
-        message.channel.bulkDelete(1);
-            message.channel.send({ files: [new Attachment('./BotBigEmotes/kappa.png', 'kappa.png')] });
-          }
-          if(message.content.startsWith(prefix + "smile")){
+
+      
+      
+        //Uploads files.
+          if(message.content.startsWith(prefix + "ichc")){
             message.channel.bulkDelete(1);
-                message.channel.send({ files: [new Attachment('./BotBigEmotes/smile.png', 'smile.png')] });
+                message.channel.send({ files: [new Attachment('./Logo/Logo.png', 'Logo.png')] });
               }
-              if(message.content.startsWith(prefix + "fc")){
-                message.channel.bulkDelete(1);
-                    message.channel.send({ files: [new Attachment('./BotBigEmotes/fcgod.png', 'fcgod.png')] });
-                  }
-                  if(message.content.startsWith(prefix + "fu")){
-                    message.channel.bulkDelete(1);
-                        message.channel.send({ files: [new Attachment('./BotBigEmotes/fu.png', 'fu.png')] });
-                      }
-                      if(message.content.startsWith(prefix + "froggyban")){
-                        message.channel.bulkDelete(1);
-                            message.channel.send({ files: [new Attachment('./BotBigEmotes/ban.png', 'ban.png')] });
-                          }
+              
         if(message.content.startsWith(prefix + "invitelink")){
           message.channel.send("`Permanent invite link: Discord.me/dcwf`");
         }      
-        if(message.content.startsWith(prefix + "sow")){
-          message.channel.bulkDelete(1);
-          message.guild.createChannel('shadow_of_war', 'text').then(channel => channel.setParent(`403905657142771713`))
-          message.reply('Channel created! Please use 1 channel per group (Max amount: 3) and delete it afterwards using !deltemp to delete this voice channel. Abusing the command will have consenquences.  ')
-      .catch(console.error);
-          } 
-          if(message.content.startsWith(prefix + "delsow")){
-            message.channel.bulkDelete(1);          
-           message.guild.channels.find('name', 'shadow_of_war').delete().catch(console.error);
-           message.reply('Channel deleted');
-          }  
-/*
+        
+
+          //EXP system, for every message a person sends they are given 1 point. Once they have enough points, they level up.
+          //If they don't have an exp profile in exp.json this will create 1.
           if (!exp[message.author.id]) exp[message.author.id] = {
             exp: 0,
             level: 0
           };
+          //Adds exp.
           let userData = exp[message.author.id];
           userData.exp++;
-        
+        //level formula
           let curLevel = Math.floor(0.1 * Math.sqrt(userData.exp));
           if (curLevel > userData.level) {
-            // level
+            // level up
             userData.level = curLevel;
             message.reply(`Levelup!**${curLevel}**!`);
           }
-        
+            //So you can see your level.
           if (message.content.startsWith(prefix + "level")) {
             message.reply(`Current level: ${userData.level} and your curent exp is ${userData.exp}`);
           }
+          //Writes in the exp.json file.
           fs.writeFile("./exp.json", JSON.stringify(exp), (err) => {
             if (err) console.error(err)
           });
-              
-          if (message.content === 'Fuck you') {
-            message.reply('Fuck you, too!');
-          }
-            if (message.content === 'fuck you') {
-              message.reply('Fuck you, too!')
-            }
-              if (message.content === 'Fuck You') {
-                message.reply('Fuck you, too!')
-              } 
-              */   
-     if (message.content.startsWith(prefix+ 'masterofwaifus')){
-        message.channel.send('Blakeeye is the master of waifus <:satanialaugh:412694899532627969>')
-     }
-     if (message.content.startsWith(prefix + 'forceupdate')){
-       message.channel.send('Updated stats.')
-     }
-     if(message.content.startsWith(prefix + 'SummonRaishin')){
-       message.channel.send('I summon thee, Staff Lord, Raishin! I bring thee thy offering. <:FeelsBaghettue:414149667304243202> @Raishin')
-     }
-     
 
-// Checks if they have talked recently
+          
 
 
 
-// Checks if they have talked recently
+
+    //exports.run = message.channel.send(`your random number is ${random}`); Nothing important. Just a fix I wanted to keep.
 
 
-
-  if(message.content.startsWith(prefix + 'Grant')){
-    if(!message.member.roles.some(r=>["Admin", "Darklight bot"].includes(r.name)) )
-    return message.reply("Sorry, you don't have permissions to use this!");
-
-    let member = message.mentions.members.first();
-    if(!member)
-      return message.reply("Please mention a valid member of this server");
-        let Dev = message.guild.roles.find("name", "Dev");
-
-
-      await member.addRole(Dev)
-        .catch(error => message.reply(`Sorry ${message.author} I couldn't ban because of : ${error}`));
-      message.reply(`${member.user.tag} was granted acces by ${message.author.tag}`);
-
-
-  }
-
-  if(message.content.startsWith(prefix + 'Restrict')){
-    if(!message.member.roles.some(r=>["Admin", "Darklight bot"].includes(r.name)) )
-    return message.reply("Sorry, you don't have permissions to use this!");
-
-    let member = message.mentions.members.first();
-    if(!member)
-      return message.reply("Please mention a valid member of this server");
-        let Dev = message.guild.roles.find("name", "Dev");
-
-
-      await member.removeRole(Dev)
-        .catch(error => message.reply(`Sorry ${message.author} I couldn't ban because of : ${error}`));
-      message.reply(`${message.author.tag} removed ${message.user.tag}'s access to bottest`);
-  }
-
-    //exports.run = message.channel.send(`your random number is ${random}`);
+        //Changes an user's nickname
 if(message.content.startsWith(prefix +'rename')){
       let member = message.mentions.members.first();
       let name = args.slice(1).join(' ');
@@ -496,7 +417,7 @@ if(message.content.startsWith(prefix +'rename')){
           message.channel.send(`Renamed to ${name}`)
   }
 
-
+    //Current RAM usage information only.
   if(message.content.startsWith(prefix +"ram")){
     const arr = [1, 2, 3, 4, 5, 6, 9, 7, 8, 9, 10];
     arr.reverse();
@@ -504,28 +425,31 @@ if(message.content.startsWith(prefix +'rename')){
     message.channel.send(`Approx. RAM usage. ${Math.round(used * 100) / 100} MB`);
   }
    const used = process.memoryUsage().heapUsed / 1024 / 1024
-  
+
+   //MS to human time converter.
   let x = client.uptime;
   let seconds=(x/1000)%60
   let minutes=(x/(1000*60))%60
   let hours=(x/(1000*60*60))%24
   
-  
+      //Bot information. 
   if(message.content.startsWith(prefix + "info")){
       const embed = new Discord.RichEmbed()
       .setTitle('Info about: The TaskMaster')
       .setColor(0x00ffff)
-      .addField(`Approx. current RAM usage.`, `${Math.round(used * 100) / 100} MB`)
       .addField(`Creator:`, `FcGod#8877`)
+      .addField(`Approx. current RAM usage.`, `${Math.round(used * 100) / 100} MB`)
+      .addField(`Current performance`, `Latency is ${message.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`)
       .addField(`Current servers count:`,`${client.guilds.size}` )
       .addField(`Current uptime`, `${Math.round(hours)} hours, ${Math.round(minutes * 10)/10} minutes, ${Math.round(seconds * 100)/100} seconds.`)
 
       .setTimestamp()
       message.channel.send({embed});
-//IF YOU DO MATH.ROUND(TARGET (* 100) / 100) YOU GET DECIMAL (FOR EVERY 0 YOU GET EXTRA DECIMAL, 3 DECIMALS 3 0S)
+
 
   }
-  
+
+      //guild information
   if(message.content.startsWith(prefix + "guild")){
     
     const embed = new Discord.RichEmbed()
@@ -542,6 +466,8 @@ if(message.content.startsWith(prefix +'rename')){
     .setTimestamp()
     message.channel.send({embed});
   }
+
+  //user information.
   if(message.content.startsWith(prefix + "user")) {
   let user = message.mentions.users.first();
   let member = message.mentions.members.first();
@@ -564,7 +490,111 @@ if(message.content.startsWith(prefix +'rename')){
   message.channel.send({embed});
  }
 
+
+ /*
+                                     //Memories of music bot. "toLowerCase()" suddenly broke the whole code, I don't know why. It works on my other bots.
+                var servers = {}; //universal queue list
+
+                function play(connection, message) {
+                    var server = servers[message.guild.id];
+                
+                    server.dispatcher = connection.playStream(YTDL(server.queue[0], {filter: "audioonly" })); /
+                    //audioonly filter to save bandwith
+                
+                    server.queue.shift(); 
+                
+                    server.dispatcher.on ("end", function() { //Execute function when song is over.
+                        if(server.queue[0]) play(connection, messsage); //If there's another song present, play  it.
+                        else connection.disconnect(); //If not disconnect from server.
+                    });
+                }
+                switch (args[0].toLowerCase()){ 
+                    case "play": //play command
+                    message.channel.sendMessage("Playing song") //Informs.
+            
+                    if(!args[1]) { //If there's no argument..
+                        message.channel.sendMessage("No link found. Please give a YT link.");
+                        return;
+                    }
+            
+                    if (!message.member.voiceChannel) { //if message sent from someone not in voicechannel return this message
+                        message.channel.sendMessage("Please be in a voice channel first or else I cannot play music to you.");
+                        return;
+                    }
+                    if(!servers[message.guild.id]) servers[message.guild.id] = {
+                        queue: []
+                    };
+            
+                    var server = servers[message.guild.id];
+            
+                    server.queue.push(args[1]); //adds song to queue
+            
+                    if(!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
+                        //if not already connected to voice channel, connect to voicechannel
+                        play(connection, message);
+                    });
+                    
+                    break;
+            
+                    case "skip": //skip case for music
+                    var server = servers[message.guild.id];
+            
+                       if (server.dispatcher) server.dispatcher.end(); 
+                
+                    break;
+            
+                    case "stop": //Stop the musicccc.
+                    var server = servers[message.guild.id];
+                    
+                    if(message.guild.voiceConnection) message.guild.voiceConnection.disconnect();
+                    message.channel.sendMessage("kbye")
+                    break;
+                };         
+    
+*/
+let cont = message.content.slice(prefix.length).split(" "); // Gets rid of prefix and makes it more readable for bot.
+let args1 = cont.slice(1); // In the cont string it gets rid of the command itself, leaving args only
+if (message.content.startsWith(prefix + 'weather')) { 
+
+  weather.find({search: args1.join(" "), degreeType: 'C'}, function(err, result) {
+      if (err) message.channel.send(err);
+
+      if (result.length === 0){ 
+          //Input verifier.
   
+          message.reply('**I think this location might not be on planet Earth. Probably in your Fantasy? Please give an existing location!**') 
+          return; 
+      }
+
+      var current = result[0].current;  
+      var location = result[0].location; 
+      const embed = new Discord.RichEmbed()
+                .setTitle(`ðŸ¤– **Weather for ${current.observationpoint}**`) //Sets title.
+                .setFooter(`Weather, Requested by ${message.author.username}`, `${message.author.avatarURL}`) //Message author info.
+                .setColor(0x00ffff) 
+                .addField('\u200b','**Location Info**') 
+                .addField('ðŸ—“ Date', `${current.date}, ${current.shortday}`, true) 
+                .addField('ðŸ• Timezone',`UTC ${location.timezone}`, true)
+                .addField('ðŸŒ Latitude/Longitude',`Lat ${location.lat}Â° / Long ${location.long}Â°`, true)
+
+
+                .addField('\u200b','**Weather Conditions**') 
+                //\u always calls upon a special character, 200b is a blank one, making a space not as big as blankfield
+                .addField('Sky Condition', `${current.skytext}`, true)
+                .addField('ðŸŒ¡ Temperature',`${current.temperature} Â°C`, true)
+                .addField('ðŸ’© Feels Like', `${current.feelslike} Â°C`, true)
+                .addField('ðŸŒŠ Humidity', `${current.humidity} %`, true)
+                .addField('ðŸŒ¬ Winds',`${current.winddisplay}`, true)
+                .addField('ðŸš¤ Windspeed', `${current.windspeed}`, true)
+
+                .addBlankField()
+
+                message.channel.send({embed});
+        });
+    }
+
+  
+
 
 
 
