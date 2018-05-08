@@ -6,7 +6,7 @@ const Attachment = require('discord.js').Attachment
 const prefix = "!";
 let fs = require(`fs`);
 //let exp = JSON.parse(fs.readFileSync("./exp.json", "utf8"));
-const YTDL = require("ytdl-core");
+//const YTDL = require("ytdl-core");
 const token = "NDE4MDc0NDI0NjQ2OTU5MTE2.DXcRwA._IMunyVdAYzZ7syMY49ZJ82_ysU";
 const weather = require('weather-js')
 //You'll require to go to discord developers, create a new app, set it as bot user and insert the token to the "token" var to make the bot work.
